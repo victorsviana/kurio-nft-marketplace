@@ -20,8 +20,8 @@ Fonte executável: `src/shared/contracts/*.ts` (zod). Este documento é o desenh
 | 401 | `UNAUTHENTICATED` / `SESSION_EXPIRED` / `INVALID_CREDENTIALS` | Sem sessão, sessão expirada, login inválido |
 | 403 | `FORBIDDEN` | Recurso de outro usuário |
 | 404 | `NOT_FOUND` | Recurso inexistente |
-| 409 | `EMAIL_TAKEN` / `USERNAME_TAKEN` / `INSUFFICIENT_AVAILABILITY` / `QUOTE_STALE` / `IDEMPOTENCY_CONFLICT` | Conflitos |
-| 422 | `VALIDATION_ERROR` / `COUPON_INVALID` / `COUPON_EXPIRED` / `WRONG_PASSWORD` / `WALLET_REJECTED` | Validação de negócio |
+| 409 | `EMAIL_TAKEN` / `USERNAME_TAKEN` / `INSUFFICIENT_AVAILABILITY` / `QUOTE_STALE` / `IDEMPOTENCY_CONFLICT` / `ORDER_IN_PROGRESS` | Conflitos |
+| 422 | `VALIDATION_ERROR` / `COUPON_INVALID` / `COUPON_EXPIRED` / `WRONG_PASSWORD` / `WALLET_REJECTED` / `WALLET_DISCONNECTED` | Validação de negócio |
 | 500 | `INTERNAL_ERROR` | Falha inesperada (cenários de erro) |
 | 503 | `SERVICE_UNAVAILABLE` | Falha transitória (pode repetir) |
 
@@ -56,9 +56,11 @@ Fonte executável: `src/shared/contracts/*.ts` (zod). Este documento é o desenh
 
 | Método | Rota | Resposta |
 | --- | --- | --- |
-| GET | `/favorites` | `{ nftIds: string[] }` |
-| PUT | `/favorites/:nftId` | `{ nftIds }` |
-| DELETE | `/favorites/:nftId` | `{ nftIds }` |
+| GET | `/favorites` | `{ nftIds: string[], items: NftSummary[] }` |
+| PUT | `/favorites/:nftId` | idem · 404 |
+| DELETE | `/favorites/:nftId` | idem |
+
+O cliente aplica a mudança de forma otimista e, em falha, reverte só o NFT afetado (FAV-02).
 
 ## Carrinho (visitante ou autenticado)
 
@@ -70,28 +72,45 @@ Fonte executável: `src/shared/contracts/*.ts` (zod). Este documento é o desenh
 | DELETE | `/cart/items/:itemId` | — | `Cart` |
 | PUT | `/cart/coupon` | `{ code }` | `Cart` · 422 `COUPON_INVALID` / `COUPON_EXPIRED` |
 | DELETE | `/cart/coupon` | — | `Cart` |
-| POST | `/cart/merge` | `{ guestCartId }` | `Cart` (autenticado) |
+| POST | `/cart/merge` | `{ guestCartId }` | `Cart` (autenticado; repetir é inócuo) |
 
 `Cart = { id, items: CartItem[], couponCode, version }` · `CartItem = { id, nftId, editionId, name, image, tokenId, editionLabel, unitPrice, quantity, available, lineTotal }`
+
+- O carrinho não traz totais: o resumo vem sempre da cotação (CART-06).
+- Merge: o login/cadastro chama `/cart/merge` com o **token novo antes** de iniciar a sessão no cliente; quantidades da mesma edição somam e são limitadas ao estoque; o carrinho do visitante é apagado e o `X-Guest-Cart-Id` é trocado.
 
 ## Cotação
 
 | Método | Rota | Corpo | Resposta |
 | --- | --- | --- | --- |
-| POST | `/quote` | `{ network? }` | `Quote` |
+| POST | `/quote` | `{ network?, previousQuoteId? }` | `Quote` (visitante ou autenticado) · 403 (cotação de outro carrinho) |
 
-`Quote = { id, cartVersion, items: QuoteLine[], subtotal, discount, networkFee, total, coupon: { code, status } \| null, network, issues: QuoteIssue[], createdAt }`
-`QuoteIssue = { type: PRICE_CHANGED \| AVAILABILITY_CHANGED \| SOLD_OUT, itemId, previous, current }`
+`Quote = { id, cartVersion, items: QuoteLine[], subtotal, discount, networkFee, total, coupon: { code, status: applied \| invalid \| expired } \| null, network, issues: QuoteIssue[], purchasable, createdAt }`
+`QuoteLine = { itemId, nftId, editionId, name, image, tokenId, editionLabel, unitPrice, quantity, available, lineTotal }` (também é o snapshot do pedido)
+`QuoteIssue = { type: PRICE_CHANGED \| AVAILABILITY_CHANGED \| SOLD_OUT \| ITEM_REMOVED \| COUPON_CHANGED \| FEE_CHANGED, itemId \| null, label, previous, current }`
+
+- Desconto = subtotal × % do cupom; taxa por rede (`ethereum 0.016`, `polygon 0.002`, `solana 0.0005`, alterável pelo controle); total = subtotal − desconto + taxa. Arredondamento para baixo em 6 casas, sempre com `big.js` no servidor.
+- Com `previousQuoteId`, `issues` descreve o que mudou desde a cotação revisada; sem ele, só problemas de estoque. `purchasable = false` quando uma linha excede o estoque ou esgotou.
+- O cliente usa a cotação como query (chave `['cart', dono, 'quote', rede]`), então qualquer invalidação do carrinho (mutation, `nft.updated`, reconexão) a recalcula.
 
 ## Pedidos (autenticado)
 
 | Método | Rota | Cabeçalhos / corpo | Resposta |
 | --- | --- | --- | --- |
-| POST | `/orders` | `Idempotency-Key: <uuid>` · `{ quoteId, walletId, network, buyer: { fullName, email } }` | `201 Order` (novo) · `200 Order` (mesma chave + mesmo corpo) · 409 `IDEMPOTENCY_CONFLICT` · 409 `QUOTE_STALE` (+ `details.quote`) |
-| GET | `/orders/:orderId` | — | `Order` · 404 · 403 |
-| GET | `/orders/active` | — | `Order \| null` (pedido pendente do usuário) |
+| POST | `/orders` | `Idempotency-Key: <uuid>` · `{ quoteId, walletId, network, buyer }` | `201 Order` (novo) · `200 Order` (mesma chave + mesmo corpo) · 400 sem chave · 409 `IDEMPOTENCY_CONFLICT` · 409 `QUOTE_STALE` (+ `details.quote` com `issues`) · 409 `ORDER_IN_PROGRESS` (+ `details.orderId`) · 422 `WALLET_DISCONNECTED` · 422 `VALIDATION_ERROR` |
+| GET | `/orders/:orderId` | — | `Order` · 404 · 403 (pedido de outro usuário, sem dados) |
+| GET | `/orders/active` | — | `{ order: Order \| null }` (pedido pendente do usuário) |
 
-`Order = { id, status: pending \| confirmed \| declined, txHash, explorerUrl, createdAt, confirmedAt, declineReason, wallet: { id, address, kind, label }, network, buyer, items: QuoteLine[] (snapshot), subtotal, discount, networkFee, total, couponCode, version }`
+`buyer = { displayName, username, profileName, ensSuffix: ".eth", email, walletAddress, walletKind, secondaryReference, referralCode, note }` (campos do formulário do Figma; o mesmo schema valida o formulário e o corpo).
+`Order = { id, status: pending \| confirmed \| declined, txHash, explorerUrl, createdAt, confirmedAt, declineReason, wallet: { id, address, kind, label }, network, buyer: { displayName, username, email }, items: QuoteLine[] (snapshot), subtotal, discount, networkFee, total, couponCode, version }`
+
+Regras do servidor simulado:
+1. **Idempotência** (ORD-06): o registro chave → pedido só é gravado quando um pedido é criado. Mesma chave + mesmo corpo (impressão digital com chaves ordenadas) = mesmo pedido; corpo diferente = 409.
+2. **Revalidação** (CHK-05): antes de criar, o servidor recalcula o carrinho e compara **valores** (preço por linha, quantidade, estoque, cupom/desconto, taxa, rede) com a cotação revisada — não a `cartVersion`, porque mudar o preço não muda o carrinho. Qualquer diferença → 409 `QUOTE_STALE` com a cotação nova e as diferenças.
+3. **Carteira**: o endereço do `buyer` precisa ser o da carteira cadastrada escolhida, e a carteira precisa estar conectada para aquela rede (`/wallets/:id/connect`).
+4. **Ciclo de vida**: criado `pending`; liquida em ~2 s com o resultado do cenário (`payment-declined` → recusado). Confirmar consome o estoque (emite `nft.updated`), remove do carrinho só as quantidades compradas (ORD-04) e gera `txHash`/`explorerUrl` simulados; se o estoque acabou antes, o pedido é recusado. Toda liquidação incrementa `version` e emite `order.updated` só para o dono. `confirmed` e `declined` são terminais.
+5. **Timeout** (cenário `order-timeout`): o pedido é criado e persistido e só depois a resposta atrasa 6 s (uma vez por chave); o cliente desiste em 4 s e repete com a mesma chave, recebendo o mesmo pedido em 200.
+6. **Recuperação após refresh**: o servidor simulado vive na página, então os timers morrem no refresh; pedidos pendentes são reagendados no boot e liquidados na leitura (`GET /orders/:id`, `/orders/active`).
 
 ## Perfil e carteiras (autenticado)
 
@@ -104,7 +123,8 @@ Fonte executável: `src/shared/contracts/*.ts` (zod). Este documento é o desenh
 | POST | `/profile/password` | `{ currentPassword, newPassword }` | `204` · 422 `WRONG_PASSWORD` |
 | GET | `/wallets` | — | `{ primary: Wallet \| null, secondary: Wallet \| null }` |
 | PUT | `/wallets/:slot` | `WalletInput` | `Wallet` · 422 |
-| POST | `/wallets/:walletId/connect` | `{ network }` | `{ status: "connected" }` · 422 `WALLET_REJECTED` |
+| POST | `/wallets/:walletId/connect` | `{ network, kind }` | `{ status: "connected" }` · 422 `WALLET_REJECTED` (cenário `wallet-rejected`) |
+| DELETE | `/wallets/:walletId/connect` | — | `204` (desconectar) |
 
 ## Eventos Socket.IO
 

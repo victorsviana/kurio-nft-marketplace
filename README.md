@@ -51,7 +51,7 @@ As senhas ficam no banco simulado apenas como hash SHA-256 com salt; o cliente g
 
 ## Simulação (MSW)
 
-Toda a API REST (`/api/*`) e o servidor Socket.IO (`wss://realtime.kurio.mock`) são simulados no navegador pelo MSW, inclusive no deploy. O banco simulado é determinístico (72 NFTs, 2 usuários, cupons) e fica no `localStorage` (`kurio.mockdb.v1`), então sobrevive a refresh.
+Toda a API REST (`/api/*`) e o servidor Socket.IO (`wss://realtime.kurio.mock`) são simulados no navegador pelo MSW, inclusive no deploy. O banco simulado é determinístico (72 NFTs, 2 usuários, cupons) e fica no `localStorage` (`kurio.mockdb.v2`), então sobrevive a refresh.
 
 ### Painel de cenários
 
@@ -73,11 +73,27 @@ O botão **"Simulação · …"** no canto inferior esquerdo abre o painel:
 | Carteira recusa conexão | `422 WALLET_REJECTED` ao conectar a carteira |
 
 - **Ações no servidor** (mudam o banco e então emitem o evento Socket.IO correspondente): alterar o preço de um NFT, esgotar a edição padrão, expirar todas as sessões, reenviar o último evento (duplicado), enviar um evento antigo (versão menor) e derrubar as conexões Socket.IO.
+- **Pedidos e carteiras**: reter pedidos como pendentes (persistido entre recargas), liquidar automaticamente, confirmar ou recusar o pedido pendente, desconectar as carteiras no servidor e mudar a taxa de rede da Ethereum para 0.02.
 - **Restaurar dados e cenário padrão**: recria o seed, volta ao cenário padrão e limpa a sessão local.
 
 ### API de controle (testes e console)
 
-`window.__kurioMocks` expõe as mesmas operações: `setScenario(id)`, `failNext('PUT /favorites/*', { status: 500, code: 'INTERNAL_ERROR', times: 1 })`, `reset()`, `expireSessions()`, `nft.setPrice(id, '1.49')`, `nft.setAvailability(id, editionId, n)`, `nft.sellOut(id)`, `realtime.replayLastEvent()`, `realtime.emitStaleNftEvent(id)`, `realtime.dropAllConnections()`. Os helpers do Playwright ficam em [`e2e/support/mocks.ts`](e2e/support/mocks.ts).
+`window.__kurioMocks` expõe as mesmas operações: `setScenario(id)`, `failNext('PUT /favorites/*', { status: 500, code: 'INTERNAL_ERROR', times: 1 })`, `reset()`, `expireSessions()`, `nft.setPrice(id, '1.49')`, `nft.setAvailability(id, editionId, n)`, `nft.sellOut(id)`, `realtime.replayLastEvent()`, `realtime.emitStaleNftEvent(id)`, `realtime.dropAllConnections({ refuse })`, `realtime.restoreConnections()`, `orders.hold(true)`, `orders.settle(orderId?, 'confirmed' | 'declined')`, `orders.list()`, `wallets.disconnectAll()`, `setNetworkFee('ethereum', '0.02')`. Os helpers do Playwright ficam em [`e2e/support/mocks.ts`](e2e/support/mocks.ts).
+
+### Reproduzindo os fluxos de falha
+
+| Fluxo | Como reproduzir |
+| --- | --- |
+| Cupom inválido / expirado | No carrinho, aplique `QUALQUER` / `BLACKFRIDAY` |
+| Preço alterado durante a compra | Com um NFT no carrinho, abra o pagamento e a revisão; no painel, altere o preço desse NFT. A revisão bloqueia a confirmação e lista a diferença |
+| Cotação desatualizada sem tempo real | No painel, "Derrubar Socket.IO" e depois altere o preço; ao confirmar, o servidor responde `409 QUOTE_STALE` e a tela pede nova confirmação |
+| Edição esgotada | "Esgotar edição padrão" com o NFT no carrinho |
+| Pagamento recusado | Cenário "Pagamento recusado"; o carrinho é preservado |
+| Timeout com recuperação | Cenário "Timeout no pedido": a primeira resposta chega depois do timeout, o cliente repete com a mesma chave e recupera o mesmo pedido |
+| Clique repetido | Clique várias vezes em "Confirmar pagamento": só um pedido é criado (`orders.list()`) |
+| Pedido pendente + desconexão | "Reter pedidos pendentes", confirme a compra, "Derrubar Socket.IO", "Confirmar pedido pendente": a tela reconcilia ao reconectar ou recarregar |
+| Carteira recusa / desconecta | Cenário "Carteira recusa conexão" / "Desconectar carteiras" antes de confirmar |
+| Sessão expirada no checkout | "Expirar sessão" com o pagamento aberto: volta ao login e retorna ao checkout com o formulário preservado |
 
 ## Processo
 

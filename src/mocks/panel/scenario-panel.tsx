@@ -108,6 +108,28 @@ export function ScenarioPanel() {
             </button>
           </div>
 
+          <h2 className="mt-4 text-sm font-bold">Pedidos e carteiras</h2>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" className={button} onClick={() => run('Pedidos retidos como pendentes', () => mockControl.orders.hold(true))}>
+              Reter pedidos pendentes
+            </button>
+            <button type="button" className={button} onClick={() => run('Liquidação automática ligada', () => mockControl.orders.hold(false))}>
+              Liquidar automaticamente
+            </button>
+            <button type="button" className={button} onClick={() => run('Pedido confirmado', () => mockControl.orders.settle(undefined, 'confirmed'))}>
+              Confirmar pedido pendente
+            </button>
+            <button type="button" className={button} onClick={() => run('Pedido recusado', () => mockControl.orders.settle(undefined, 'declined'))}>
+              Recusar pedido pendente
+            </button>
+            <button type="button" className={button} onClick={() => run('Carteiras desconectadas', mockControl.wallets.disconnectAll)}>
+              Desconectar carteiras
+            </button>
+            <button type="button" className={button} onClick={() => run('Taxa de rede alterada', () => mockControl.setNetworkFee('ethereum', '0.02'))}>
+              Taxa Ethereum → 0.02
+            </button>
+          </div>
+
           <button
             type="button"
             className="mt-4 w-full rounded-md bg-brand px-3 py-2 text-sm font-bold text-ink"

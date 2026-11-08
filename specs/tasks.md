@@ -40,12 +40,12 @@ Telas (∥ depois da base):
 
 ## Checkpoint 3 — Compra e tempo real
 
-- [ ] T3.1 ∥ Favoritos com atualização otimista e rollback — FAV-01..FAV-03
-- [ ] T3.2 ∥ Carrinho: itens, quantidades, remoção, cupom, merge do visitante, persistência — CART-01..CART-06, CART-08
-- [ ] T3.3 Cotação e checkout: dados do colecionador, carteira e rede, conexão/recusa, revisão, revalidação — CHK-01..CHK-05, CHK-07, WAL-03
-- [ ] T3.4 Pedidos: Idempotency-Key persistida, pendente/confirmado/recusado, recuperação após refresh e reconexão, recibo snapshot, remoção parcial do carrinho — CHK-06, ORD-01..ORD-06
-- [ ] T3.5 `nft.updated` no catálogo, detalhe e carrinho + cenário de checkout desatualizado — RT-02, RT-03, RT-09, CART-07
-- [ ] T3.6 E2E: favoritos, carrinho, compra completa, falhas de pagamento, Socket.IO, eventos duplicados (cenários 4, 5, 6, 7, 9, 10 do §9)
+- [x] T3.1 ∥ Favoritos com atualização otimista e rollback — FAV-01..FAV-03
+- [x] T3.2 ∥ Carrinho: itens, quantidades, remoção, cupom, merge do visitante, persistência — CART-01..CART-06, CART-08
+- [x] T3.3 Cotação e checkout: dados do colecionador, carteira e rede, conexão/recusa, revisão, revalidação — CHK-01..CHK-05, CHK-07, WAL-03
+- [x] T3.4 Pedidos: Idempotency-Key persistida, pendente/confirmado/recusado, recuperação após refresh e reconexão, recibo snapshot, remoção parcial do carrinho — CHK-06, ORD-01..ORD-06
+- [x] T3.5 `nft.updated` no catálogo, detalhe e carrinho + cenário de checkout desatualizado — RT-02, RT-03, RT-09, CART-07
+- [x] T3.6 E2E: favoritos, carrinho, compra completa, falhas de pagamento, Socket.IO, eventos duplicados (cenários 4, 5, 6, 7, 9, 10 do §9) — `orders-api`, `cart`, `favorites`, `checkout`, `order-status`, `purchase` (218 testes no total, desktop + mobile)
 
 ## Checkpoint 4 — Perfil, carteiras e acabamento
 

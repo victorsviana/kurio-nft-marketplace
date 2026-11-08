@@ -13,7 +13,16 @@ import { useIsWide } from '../lib/use-media-query'
 const PAGE_SIZE = 5
 
 /** "Mais desta coleção": 5-card pages with dot buttons (lg+), scroll-snap row below. */
-export function RelatedSection({ nftId, className }: { nftId: string; className?: string }) {
+export function RelatedSection({
+  nftId,
+  className,
+  title = 'Mais desta coleção',
+}: {
+  nftId: string
+  className?: string
+  /** Section heading; the cart reuses the carousel as "Colecionadores também viram". */
+  title?: string
+}) {
   const headingId = useId()
   const wide = useIsWide()
   const related = useQuery(relatedQuery(nftId))
@@ -48,7 +57,7 @@ export function RelatedSection({ nftId, className }: { nftId: string; className?
   return (
     <section aria-labelledby={headingId} className={className} data-testid="related-section">
       <h2 id={headingId} className="text-[17px] leading-4 font-bold text-brand-text">
-        Mais desta coleção
+        {title}
       </h2>
       <div aria-hidden="true" className="mt-3 h-px bg-brand/30" />
       <div className="mt-8">{content}</div>

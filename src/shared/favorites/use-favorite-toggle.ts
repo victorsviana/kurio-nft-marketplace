@@ -31,11 +31,17 @@ export function useFavoriteToggle() {
     mutationFn: ({ nftId, favorite }: { nftId: string; favorite: boolean; name?: string }) => setFavorite(nftId, favorite),
     onMutate: async ({ nftId, favorite }) => {
       await queryClient.cancelQueries({ queryKey: key })
+      const removed = queryClient.getQueryData<FavoritesResponse>(key)?.items.find((item) => item.id === nftId)
       queryClient.setQueryData<FavoritesResponse>(key, (old) => applyToggle(old, nftId, favorite))
+      return { removed }
     },
-    onError: (error, { nftId, favorite, name }) => {
-      // Per-NFT rollback: restore the opposite state of this NFT only.
-      queryClient.setQueryData<FavoritesResponse>(key, (old) => applyToggle(old, nftId, !favorite))
+    onError: (error, { nftId, favorite, name }, context) => {
+      // Per-NFT rollback: restore the opposite state of this NFT only (with its card, if removed).
+      queryClient.setQueryData<FavoritesResponse>(key, (old) => {
+        const restored = applyToggle(old, nftId, !favorite)
+        if (!restored || favorite || !context?.removed || restored.items.some((i) => i.id === nftId)) return restored
+        return { ...restored, items: [context.removed, ...restored.items] }
+      })
       const message = `Não foi possível ${favorite ? 'favoritar' : 'remover dos favoritos'}${name ? ` ${name}` : ''}. ${toApiError(error).message}`
       toast.error(message)
       announce(message, 'assertive')

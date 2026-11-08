@@ -92,6 +92,7 @@ declare global {
         disconnectAll: () => void
         connections: () => unknown[]
       }
+      coupons: { expire: (code: string) => void }
       setNetworkFee: (network: 'ethereum' | 'polygon' | 'solana', fee: string) => void
       realtime: {
         connectionCount: () => number

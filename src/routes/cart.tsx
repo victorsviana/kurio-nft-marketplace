@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { PagePlaceholder } from '@/components/layout/page-placeholder'
+import { CartScreen } from '@/features/cart/cart-screen'
 
 export const Route = createFileRoute('/cart')({
-  staticData: { section: 'mercado', headerDivider: false, mobileTabBar: true },
-  component: () => <PagePlaceholder title="Carrinho de NFTs" requirement="CART" />,
+  // Figma: "Mercado" active without divisor on desktop; the mobile frame has its own top bar
+  // and no global header, tab bar or footer.
+  staticData: { section: 'mercado', headerDivider: false, mobileHeader: false, mobileTabBar: false, mobileFooter: false },
+  component: CartScreen,
 })

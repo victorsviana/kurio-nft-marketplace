@@ -204,12 +204,14 @@ test.describe('Cenário 3 — conta e sessão', () => {
       await expect(heading(page, 'Pagamento')).toBeVisible()
     })
 
-    test('AUTH-02: "Entrar" do header volta à página de origem', async ({ page }) => {
-      await open(page, '/cart')
+    test('AUTH-02: "Entrar" do header volta à página de origem', async ({ page, isMobile }) => {
+      // The mobile cart follows its frame (own top bar, no global header): use /status there.
+      const origin = isMobile ? '/status' : '/cart'
+      await open(page, origin)
       await page.getByRole('banner').getByRole('link', { name: 'Entrar' }).click()
-      await expect(page).toHaveURL('/login?redirect=%2Fcart')
+      await expect(page).toHaveURL(`/login?redirect=${encodeURIComponent(origin)}`)
       await submitLogin(page, USERS.ana)
-      await expect(page).toHaveURL('/cart')
+      await expect(page).toHaveURL(origin)
       await expect(accountButton(page, 'Ana Ribeiro')).toBeVisible()
     })
 

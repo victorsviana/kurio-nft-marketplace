@@ -12,6 +12,7 @@ export interface ApiResult<T = unknown> {
   ms: number
 }
 
+// oxlint-disable-next-line typescript/no-explicit-any -- test helper: bodies are asserted field by field
 export async function api<T = any>(
   page: Page,
   method: string,

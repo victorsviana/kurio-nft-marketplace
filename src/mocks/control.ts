@@ -100,6 +100,15 @@ export const mockControl = {
     connections: () => db().walletConnections,
   },
 
+  coupons: {
+    /** Expires a coupon (even one already applied to a cart): quotes then report it as expired. */
+    expire: (code: string) =>
+      mutate((draft) => {
+        const coupon = draft.coupons.find((c) => c.code === code.toUpperCase())
+        if (coupon) coupon.expiresAt = new Date(Date.now() - 1000).toISOString()
+      }),
+  },
+
   /** Changes the network fee (FEE_CHANGED in the next quote comparison). */
   setNetworkFee: (network: Network, fee: string) =>
     mutate((draft) => {
