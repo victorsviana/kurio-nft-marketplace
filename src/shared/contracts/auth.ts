@@ -47,8 +47,9 @@ export type Session = z.infer<typeof sessionSchema>
 export const authResponseSchema = z.object({ user: userSchema, session: sessionSchema })
 export type AuthResponse = z.infer<typeof authResponseSchema>
 
+/** The Figma sign-up form has no display name field: it is optional and defaults to the username. */
 export const registerInputSchema = z.object({
-  displayName: displayNameField,
+  displayName: displayNameField.optional(),
   username: usernameField,
   email: emailField,
   password: passwordField,

@@ -10,7 +10,8 @@ export const authHandlers = [
   http.post(api('/auth/register'), async ({ request }) => {
     const body = await readBody(request, registerInputSchema)
     if (!body.ok) return body.response
-    const { displayName, username, email, password } = body.data
+    const { username, email, password } = body.data
+    const displayName = body.data.displayName ?? username
 
     const fieldErrors: Record<string, string> = {}
     if (db().users.some((u) => u.email === email)) fieldErrors.email = 'Este e-mail já está cadastrado.'

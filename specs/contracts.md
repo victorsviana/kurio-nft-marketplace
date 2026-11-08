@@ -29,7 +29,7 @@ Fonte executável: `src/shared/contracts/*.ts` (zod). Este documento é o desenh
 
 | Método | Rota | Corpo | Resposta |
 | --- | --- | --- | --- |
-| POST | `/auth/register` | `{ displayName, username, email, password }` | `201 { user, session }` · 409 · 422 |
+| POST | `/auth/register` | `{ username, email, password, displayName? }` (sem nome no Figma → padrão = username) | `201 { user, session }` · 409 (`fieldErrors` por campo) · 422 |
 | POST | `/auth/login` | `{ email, password }` | `200 { user, session }` · 401 |
 | GET | `/auth/session` | — | `200 { user, session }` · 401 |
 | POST | `/auth/logout` | — | `204` |

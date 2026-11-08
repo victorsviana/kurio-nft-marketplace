@@ -45,7 +45,7 @@ Tipos: Body/14 Bold lh16 · Body/14 Regular lh16 · Body/15 Regular lh normal ·
 
 - Fundo `tabbar-bg.svg` (Surface Card com recorte côncavo central e sombra), largura total.
 - Botão central 65 × 65 (`tabbar-fab.svg`, gradiente Primary 40%→100%) com ícone de scan (`scan-1..5.svg`) — ação sem fluxo no enunciado → tratar como "em breve" (GEN-03) ou atalho para busca.
-- Ícones 20px (posições por % do frame): Início (`icon-home.svg`, ativo em Primary) · Favoritos (`icon-heart.svg`) · [FAB] · Carrinho (`icon-shop.svg`) · Perfil (`icon-user.svg`). Inativos em foreground.
+- Ícones 20px (posições por % do frame): Início (`icon-home.svg`) · Favoritos (`icon-heart.svg`) · [FAB] · Carrinho (`icon-shop.svg`) · Perfil (`icon-user.svg`). Inativos em Text/Secondary `#CFB28C`, ativo em Text/Accent `#E89B55` (cores dos SVGs exportados).
 
 ## Decisões de implementação
 
