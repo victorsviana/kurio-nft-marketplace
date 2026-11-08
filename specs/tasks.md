@@ -25,12 +25,12 @@ Legenda: `[ ]` pendente · `[~]` em andamento · `[x]` feito · **∥** pode rod
 ## Checkpoint 2 — Dados, catálogo, detalhe e conta
 
 Base (sequencial):
-- [ ] T2.1 Contratos zod de todos os recursos, erros e eventos — todos
-- [ ] T2.2 Banco simulado: fixtures (catálogo variado, 2 usuários, cupons), persistência versionada no localStorage, reset — MOCK-02, MOCK-03, MOCK-05
-- [ ] T2.3 Motor de cenários (latência, falhas por rota, offline, fora de ordem) + API de controle em `src/mocks` + painel de cenários — MOCK-04, MOCK-06
-- [ ] T2.4 Cliente Axios: base URL, token, `X-Guest-Cart-Id`, validação zod da resposta, normalização de erros, 401 de sessão — CAT-06, AUTH-04
-- [ ] T2.5 Camada realtime: conexão por sessão, dedupe por `eventId`, controle de `version` por recurso, reconciliação na reconexão, limpeza de listeners — RT-01, RT-04..RT-08
-- [ ] T2.6 UI base: shadcn com o visual Kurio, Header, Footer, layout, skeleton com shimmer, região `aria-live` — GEN-04, GEN-05, A11Y-04
+- [x] T2.1 Contratos zod de todos os recursos, erros e eventos (`src/shared/contracts/`; o mesmo `catalogSearchSchema` valida URL e API) — todos
+- [x] T2.2 Banco simulado: fixtures determinísticas (72 NFTs, 9 primeiros iguais ao Figma, 2 usuários, cupons), persistência versionada no localStorage, reset — MOCK-02, MOCK-03, MOCK-05
+- [x] T2.3 Motor de cenários (latência com semente, falhas por rota, offline, fora de ordem) + API de controle `window.__kurioMocks` (muta o banco e depois emite) + painel de cenários — MOCK-04, MOCK-06
+- [x] T2.4 Cliente Axios: base URL, token, `X-Guest-Cart-Id`, validação zod da resposta, normalização de erros (`ApiError`), 401 de sessão → `sessionStore.end` — CAT-06, AUTH-04
+- [x] T2.5 Camada realtime: conexão por sessão, dedupe por `eventId`, controle de `version` por recurso, reconciliação na reconexão, limpeza de listeners — RT-01, RT-04..RT-08
+- [x] T2.6 UI base: shadcn com o visual Kurio, Header, Footer, tab bar mobile, layout por `staticData`, skeleton com shimmer, região `aria-live`, guards de rota — GEN-04, GEN-05, A11Y-04
 
 Telas (∥ depois da base):
 - [ ] T2.7 ∥ Início: hero, destaque, abas, sidebar de filtros/drawer mobile, ordenação, grade, paginação, estados — CAT-01..CAT-09, GEN-05, GEN-06

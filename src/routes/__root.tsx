@@ -1,5 +1,14 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Link, Outlet } from '@tanstack/react-router'
+import { SessionSync } from '@/app/session-sync'
+import { Footer } from '@/components/layout/footer'
+import { Header } from '@/components/layout/header'
+import { useLayoutOptions } from '@/components/layout/layout-options'
+import { MobileTabBar } from '@/components/layout/mobile-tab-bar'
+import { Toaster } from '@/components/ui/sonner'
+import { cn } from '@/lib/utils'
+import { AnnouncerProvider } from '@/shared/a11y/announcer'
+import { RealtimeProvider } from '@/shared/realtime/realtime-provider'
 
 export interface RouterContext {
   queryClient: QueryClient
@@ -11,18 +20,28 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootLayout() {
+  const { mobileTabBar } = useLayoutOptions()
   return (
-    <div className="flex min-h-dvh flex-col">
-      <a
-        href="#conteudo"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-brand focus:px-3 focus:py-2 focus:text-ink"
-      >
-        Pular para o conteúdo
-      </a>
-      <main id="conteudo" className="flex-1">
-        <Outlet />
-      </main>
-    </div>
+    <AnnouncerProvider>
+      <RealtimeProvider>
+        <SessionSync />
+        <div className={cn('flex min-h-dvh flex-col', mobileTabBar && 'max-md:pb-[140px]')}>
+          <a
+            href="#conteudo"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-brand focus:px-3 focus:py-2 focus:text-ink"
+          >
+            Pular para o conteúdo
+          </a>
+          <Header />
+          <main id="conteudo" tabIndex={-1} className="flex-1 outline-none">
+            <Outlet />
+          </main>
+          <Footer />
+          {mobileTabBar && <MobileTabBar />}
+        </div>
+        <Toaster position="top-center" />
+      </RealtimeProvider>
+    </AnnouncerProvider>
   )
 }
 

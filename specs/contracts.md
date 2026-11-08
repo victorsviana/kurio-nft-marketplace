@@ -21,7 +21,8 @@ Fonte executável: `src/shared/contracts/*.ts` (zod). Este documento é o desenh
 | 403 | `FORBIDDEN` | Recurso de outro usuário |
 | 404 | `NOT_FOUND` | Recurso inexistente |
 | 409 | `EMAIL_TAKEN` / `USERNAME_TAKEN` / `INSUFFICIENT_AVAILABILITY` / `QUOTE_STALE` / `IDEMPOTENCY_CONFLICT` | Conflitos |
-| 422 | `VALIDATION_ERROR` / `COUPON_INVALID` / `COUPON_EXPIRED` / `WRONG_PASSWORD` | Validação de negócio |
+| 422 | `VALIDATION_ERROR` / `COUPON_INVALID` / `COUPON_EXPIRED` / `WRONG_PASSWORD` / `WALLET_REJECTED` | Validação de negócio |
+| 500 | `INTERNAL_ERROR` | Falha inesperada (cenários de erro) |
 | 503 | `SERVICE_UNAVAILABLE` | Falha transitória (pode repetir) |
 
 ## Sessão e conta
@@ -40,14 +41,16 @@ Fonte executável: `src/shared/contracts/*.ts` (zod). Este documento é o desenh
 | Método | Rota | Resposta |
 | --- | --- | --- |
 | GET | `/nfts?q&tab&category&network&minPrice&maxPrice&sort&page&pageSize` | `{ items: NftSummary[], page, pageSize, total, totalPages, facets }` |
-| GET | `/nfts/featured` | `NftSummary` (hero e card "NFT em destaque") |
+| GET | `/nfts/featured` | `{ hero: NftSummary, spotlight: NftSummary }` (arte do hero e card "NFT em destaque") |
+| GET | `/nfts/:nftId/related` | `{ items: NftSummary[] }` ("Mais desta coleção", até 15) · 404 |
 | GET | `/nfts/:nftId` | `NftDetail` · 404 |
 
-- `tab`: `all` \| `new` \| `trending` · `category`: slugs separados por vírgula (`digital-art,music`) · `network`: `ethereum` \| `polygon` \| `solana` (múltiplos) · `minPrice`/`maxPrice`: string decimal · `sort`: `recent` \| `price-asc` \| `price-desc` \| `name`
+- Os parâmetros são **os mesmos da URL** (`catalogSearchSchema`, validado pelo router e pelo handler): `q` · `tab`: `all` \| `new` \| `trending` · `category`: slugs separados por vírgula em ordem canônica (`digital-art,music`) · `network`: `ethereum` \| `polygon` \| `solana` (vírgula) · `minPrice`/`maxPrice`: string decimal · `sort`: `recent` \| `price-asc` \| `price-desc` \| `name` · `page`. Valores padrão ficam fora da URL e da requisição. Valor malformado cai no padrão. `pageSize` é fixo no servidor (9).
+- Facetas: cada contagem aplica todos os filtros ativos menos a própria dimensão. `priceRange` é o mínimo/máximo do catálogo inteiro.
 - `facets = { categories: { slug, label, count }[], networks: { slug, label, count }[], priceRange: { min, max } }` (contagens da sidebar)
-- `NftSummary = { id, name, image, category, collection, network, price, compareAtPrice, available, isNew, isTrending, rarity, version }` (`compareAtPrice` = preço riscado, como "2.29 ETH" no Figma)
-- `NftDetail = NftSummary + { tokenId, description, longDescription, images[], rating, reviewsCount, reviews[], attributes[], network, contractAddress, royaltyPercent, editions: Edition[] }`
-- `Edition = { id, kind, label, supply, available, price }`
+- `NftSummary = { id, name, image, category, collection, collectionSlug, network, price, compareAtPrice, available, isNew, isTrending, rarity, createdAt, version }` (`price` = edição padrão; `available` = soma das edições; `compareAtPrice` = preço riscado, como "2.29 ETH" no Figma; `image` segue `/images/nft/<arte>-512.webp`, com variantes 256/960)
+- `NftDetail = NftSummary + { tokenId, creator, description, longDescription: string[], images: { url, alt }[], rating, reviewsCount, reviews[], attributes: { trait, value }[], contractAddress, tokenStandard, royaltyPercent, networkNote, defaultEditionId, editions: Edition[] }`
+- `Edition = { id, kind: unique \| limited-10 \| limited-50 \| open, label: "1/1" \| "1/10" \| "1/50" \| "ABERTA", supply (null = aberta), available, price }`
 
 ## Favoritos (autenticado)
 
@@ -88,7 +91,7 @@ Fonte executável: `src/shared/contracts/*.ts` (zod). Este documento é o desenh
 | GET | `/orders/:orderId` | — | `Order` · 404 · 403 |
 | GET | `/orders/active` | — | `Order \| null` (pedido pendente do usuário) |
 
-`Order = { id, status: pending \| confirmed \| declined, txHash, explorerUrl, createdAt, confirmedAt, declineReason, wallet, network, items (snapshot), subtotal, discount, networkFee, total, version }`
+`Order = { id, status: pending \| confirmed \| declined, txHash, explorerUrl, createdAt, confirmedAt, declineReason, wallet: { id, address, kind, label }, network, buyer, items: QuoteLine[] (snapshot), subtotal, discount, networkFee, total, couponCode, version }`
 
 ## Perfil e carteiras (autenticado)
 
@@ -105,7 +108,7 @@ Fonte executável: `src/shared/contracts/*.ts` (zod). Este documento é o desenh
 
 ## Eventos Socket.IO
 
-Conexão: `io(VITE_SOCKET_URL, { transports: ['websocket'], auth: { token } })`. Sem token, o socket recebe apenas eventos públicos.
+Conexão: `io(VITE_SOCKET_URL, { transports: ['websocket'], auth: { token } })`. Sem token, o socket recebe apenas eventos públicos. Um cliente por sessão: trocar de token fecha o socket anterior e abre outro. `socket.io-client` é importado sob demanda, depois do boot do MSW (o engine.io captura `globalThis.WebSocket` ao ser avaliado).
 
 Envelope comum:
 
@@ -115,7 +118,7 @@ Envelope comum:
 
 | Evento | Destinatário | `data` |
 | --- | --- | --- |
-| `nft.updated` | Todos | `{ nftId, price, available, editions: Edition[] }` |
+| `nft.updated` | Todos | `{ nftId, price, compareAtPrice, available, editions: Edition[] }` |
 | `order.updated` | Somente o dono (pelo token do handshake) | `{ orderId, status, txHash, declineReason }` |
 
 Regras do cliente: ignora `eventId` já processado e `version` menor ou igual à última aplicada no recurso; ao reconectar, invalida as queries ativas de catálogo, detalhe, carrinho e pedido pendente.

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import type { Socket } from 'socket.io-client'
 import { http } from '@/shared/api/http'
 import { createSocket } from '@/shared/realtime/socket'
 
@@ -30,16 +31,22 @@ function StatusPage() {
   const [lastEvent, setLastEvent] = useState<string | null>(null)
 
   useEffect(() => {
-    const socket = createSocket(null)
-    socket.on('connect', () => setSocketState('connected'))
-    socket.on('disconnect', () => setSocketState('disconnected'))
-    socket.on('system.ready', (payload: { serverTime: string }) =>
-      setLastEvent(`system.ready @ ${payload.serverTime}`),
-    )
-    socket.connect()
+    let socket: Socket | null = null
+    let cancelled = false
+    void createSocket(null).then((created) => {
+      if (cancelled) return
+      socket = created
+      socket.on('connect', () => setSocketState('connected'))
+      socket.on('disconnect', () => setSocketState('disconnected'))
+      socket.on('system.ready', (payload: { serverTime: string }) =>
+        setLastEvent(`system.ready @ ${payload.serverTime}`),
+      )
+      socket.connect()
+    })
     return () => {
-      socket.removeAllListeners()
-      socket.disconnect()
+      cancelled = true
+      socket?.removeAllListeners()
+      socket?.disconnect()
     }
   }, [])
 
