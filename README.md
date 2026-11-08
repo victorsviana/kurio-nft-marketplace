@@ -2,6 +2,8 @@
 
 Solução do [desafio frontend da Jungle Gaming](https://github.com/junglegaming/frontend-challenge): marketplace de NFTs em React + TypeScript, com API REST e Socket.IO simulados por MSW.
 
+**Aplicação publicada:** https://kurio-nft-marketplace-omega-six.vercel.app
+
 > Em desenvolvimento. Este README será completado ao fim do projeto com credenciais, cenários, contratos e instruções de reprodução das falhas.
 
 ## Stack
@@ -27,6 +29,7 @@ npm run dev                       # http://localhost:5173 (mocks ligados)
 | `npm run lint` | Lint (oxlint) |
 | `npm run test:e2e` | Testes Playwright (gera build e sobe o preview) |
 | `npm run test:e2e:report` | Abre o relatório HTML dos testes |
+| `E2E_BASE_URL=<url> npm run test:e2e` | Roda a suíte contra um deploy (sem subir servidor local) |
 
 ## Variáveis de ambiente
 

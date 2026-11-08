@@ -20,7 +20,7 @@ Legenda: `[ ]` pendente · `[~]` em andamento · `[x]` feito · **∥** pode rod
 - [x] T1.4 **Spike**: `socket.io-client` ↔ `@mswjs/socket.io-binding` emitindo um evento no build de produção — RT-01
 - [x] T1.5 Árvore de rotas completa (placeholders), 404 e rewrites da Vercel — GEN-01, GEN-02
 - [x] T1.6 Playwright (Chromium desktop + mobile, `webServer` no preview, relatório HTML, trace em falha) + smoke test — QA-01, QA-03
-- [~] T1.7 Repositório GitHub público + deploy na Vercel — QA-05
+- [x] T1.7 Repositório GitHub público + deploy na Vercel — QA-05
 
 ## Checkpoint 2 — Dados, catálogo, detalhe e conta
 

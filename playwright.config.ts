@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const PORT = 4173
-const baseURL = `http://localhost:${PORT}`
+/** Set E2E_BASE_URL to run the suite against a deployed build (e.g. the Vercel URL). */
+const externalBaseURL = process.env.E2E_BASE_URL
+const baseURL = externalBaseURL ?? `http://localhost:${PORT}`
 
 /**
  * E2E suite runs against the optimized build served by `vite preview`, with the MSW
@@ -35,10 +37,12 @@ export default defineConfig({
       use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } },
     },
   ],
-  webServer: {
-    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
-    url: baseURL,
-    reuseExistingServer: false,
-    timeout: 180_000,
-  },
+  webServer: externalBaseURL
+    ? undefined
+    : {
+        command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+        url: baseURL,
+        reuseExistingServer: false,
+        timeout: 180_000,
+      },
 })
