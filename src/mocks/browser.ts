@@ -42,7 +42,8 @@ export async function startMockServer() {
 
   await worker.start({
     onUnhandledRequest: 'bypass',
-    quiet: import.meta.env.PROD,
+    // quiet in every mode: MSW would otherwise log request bodies, including passwords
+    quiet: true,
     serviceWorker: { url: '/mockServiceWorker.js' },
   })
   window.__kurioMocks = mockControl

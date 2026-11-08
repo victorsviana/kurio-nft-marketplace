@@ -37,16 +37,26 @@ export function useAuth(): AuthState {
 export type EnsureUserResult = { user: User; expired: false } | { user: null; expired: boolean }
 
 /**
- * Router guard helper. Revalidates the session with the server on private navigations (at most
- * every 10s), so an expired session is detected while navigating, not only on the next write
+ * Router guard helper. Revalidates the session with the server on every private navigation
+ * (deduplicated for 2s), so an expired session is detected while navigating, not only on the next write
  * (AUTH-04). Never throws.
  */
 export async function ensureUser(queryClient: QueryClient): Promise<EnsureUserResult> {
   const stored = sessionStore.get()
   if (!stored) return { user: null, expired: false }
+  const key = queryKeys.session(stored.token)
+  const state = queryClient.getQueryState<AuthResponse>(key)
+  if (state?.status === 'success' && state.data && Date.now() - state.dataUpdatedAt < 2_000) {
+    return { user: state.data.user, expired: false }
+  }
+  // A direct request instead of fetchQuery: if the session ends while it is in flight, the
+  // session observers re-key and TanStack Query would cancel the shared query with `revert`,
+  // resolving with the stale user. The guard must see the server's answer.
   try {
-    const { user } = await queryClient.fetchQuery({ ...sessionQuery(stored.token), staleTime: 10_000 })
-    return { user, expired: false }
+    const response = await apiRequest(authResponseSchema, { url: '/auth/session' })
+    if (response.user.id !== stored.userId) return { user: null, expired: false }
+    queryClient.setQueryData(key, response)
+    return { user: response.user, expired: false }
   } catch (error) {
     return { user: null, expired: toApiError(error).code === 'SESSION_EXPIRED' }
   }

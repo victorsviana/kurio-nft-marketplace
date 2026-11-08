@@ -45,9 +45,9 @@ export function Footer() {
 
   return (
     <footer className="container-page mt-24 pb-6">
-      <section aria-label="Destaques da Kurio" className="grid gap-8 bg-surface p-8 lg:min-h-[250px] lg:grid-cols-[1fr_1fr_1fr_357px] lg:gap-0">
+      <section aria-label="Destaques da Kurio" className="grid gap-8 bg-surface p-8 sm:grid-cols-2 xl:min-h-[250px] xl:grid-cols-[1fr_1fr_1fr_357px] xl:gap-0">
         {HIGHLIGHTS.map((item) => (
-          <div key={item.letter} className="flex flex-col gap-3 lg:border-r lg:border-brand lg:px-4">
+          <div key={item.letter} className="flex flex-col gap-3 xl:border-r xl:border-brand xl:px-4">
             <span aria-hidden="true" className="grid size-[74px] place-items-center rounded-full bg-brand text-2xl font-bold text-ink">
               {item.letter}
             </span>
@@ -55,7 +55,7 @@ export function Footer() {
             <p className="max-w-[204px] text-sm leading-[22px] text-fg-muted">{item.text}</p>
           </div>
         ))}
-        <form onSubmit={subscribe} className="flex flex-col gap-4 lg:pl-4" aria-describedby={noteId}>
+        <form onSubmit={subscribe} className="flex flex-col gap-4 xl:pl-4" aria-describedby={noteId}>
           <label htmlFor={emailId} className="text-lg leading-4 font-bold text-fg">
             Antecipe-se ao próximo lançamento
           </label>
@@ -76,7 +76,7 @@ export function Footer() {
         </form>
       </section>
 
-      <section aria-label="Contato" className="grid gap-4 bg-surface-dark p-8 sm:grid-cols-2 lg:min-h-[88px] lg:grid-cols-4 lg:items-center lg:gap-[92px]">
+      <section aria-label="Contato" className="grid gap-4 bg-surface-dark p-8 sm:grid-cols-2 lg:min-h-[88px] lg:grid-cols-4 lg:items-center xl:gap-[92px]">
         <span className="text-sm font-bold tracking-[1.4px] text-fg">KURIO</span>
         <p className="text-sm leading-[22px] text-fg">
           Feito para colecionadores,
@@ -90,12 +90,12 @@ export function Footer() {
         </a>
       </section>
 
-      <nav aria-label="Rodapé" className="grid gap-8 bg-surface p-8 sm:grid-cols-2 lg:min-h-[236px] lg:grid-cols-[1fr_1fr_1fr_228px] lg:gap-[124px]">
+      <nav aria-label="Rodapé" className="grid gap-8 bg-surface p-8 sm:grid-cols-2 lg:grid-cols-4 xl:min-h-[236px] xl:grid-cols-[1fr_1fr_1fr_228px] xl:gap-[124px]">
         <div>
           <h2 className={headingClass}>Meu perfil</h2>
           <ul className="mt-2">
             <li>
-              <Link to="/account/profile" className={linkClass}>
+              <Link to="/account/profile" preload={false} className={linkClass}>
                 Meu perfil
               </Link>
             </li>

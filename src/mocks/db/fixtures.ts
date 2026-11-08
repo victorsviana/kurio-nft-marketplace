@@ -311,6 +311,14 @@ function buildCatalog(): NftRecord[] {
   seeds[CATALOG_SIZE - 1]!.price = '12.30'
   seeds[CATALOG_SIZE - 2]!.price = '0.02'
   const catalog = seeds.map((seed, index) => buildNft(rand, seed, index))
+  // The Figma grid shows no badge and no strike-through price on these cards (only Neon Vessel
+  // is rare and on sale). Post-processing keeps the random draws of the other 63 NFTs intact.
+  for (const nft of catalog.slice(0, FIGMA_GRID.length)) {
+    if (nft.id === 'neon-vessel-552') continue
+    nft.rarity = 'common'
+    nft.compareAtPrice = null
+    nft.attributes = nft.attributes.map((a) => (a.trait === 'Raridade' ? { ...a, value: 'Comum' } : a))
+  }
   // a fully sold-out NFT for the "esgotado" state
   const soldOut = catalog[20]!
   soldOut.editions = soldOut.editions.map((e) => ({ ...e, available: 0 }))

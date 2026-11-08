@@ -15,6 +15,8 @@ export interface LayoutOptions {
   mobileHeader?: boolean
   /** Fixed bottom tab bar on mobile (Mobile / Início). */
   mobileTabBar?: boolean
+  /** Global footer below 768px (screens whose mobile frame has no footer turn it off). */
+  mobileFooter?: boolean
 }
 
 declare module '@tanstack/react-router' {
@@ -27,6 +29,7 @@ const DEFAULTS: Required<LayoutOptions> = {
   headerDivider: true,
   mobileHeader: true,
   mobileTabBar: false,
+  mobileFooter: true,
 }
 
 export function useLayoutOptions(): Required<LayoutOptions> {

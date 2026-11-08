@@ -12,13 +12,14 @@ const AnnouncerContext = createContext<Announce>(() => {})
 export function AnnouncerProvider({ children }: { children: ReactNode }) {
   const [polite, setPolite] = useState('')
   const [assertive, setAssertive] = useState('')
-  const timer = useRef<number | undefined>(undefined)
+  // One timer per region, so a polite message is not dropped by an assertive one right after it.
+  const timers = useRef<Record<Politeness, number | undefined>>({ polite: undefined, assertive: undefined })
 
   const announce = useCallback<Announce>((message, politeness = 'polite') => {
     const set = politeness === 'assertive' ? setAssertive : setPolite
     set('')
-    window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => set(message), 60)
+    window.clearTimeout(timers.current[politeness])
+    timers.current[politeness] = window.setTimeout(() => set(message), 60)
   }, [])
 
   const value = useMemo(() => announce, [announce])

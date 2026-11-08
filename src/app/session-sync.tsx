@@ -22,7 +22,10 @@ export function SessionSync() {
   useEffect(
     () =>
       sessionStore.onEnd((reason) => {
-        clearPrivateCache(queryClient)
+        // Deferred by a task: the 401 that ended the session may belong to a request a route
+        // guard is still awaiting; removing its query synchronously would turn that 401 into a
+        // cancellation and the guard would lose `reason=expired`.
+        window.setTimeout(() => clearPrivateCache(queryClient), 0)
         const { location, matches, status } = router.state
         // While a navigation is pending, the route guard owns the redirect (it knows the target URL).
         const onPrivateRoute = status === 'idle' && matches.some((match) => match.staticData.requiresAuth)

@@ -33,8 +33,14 @@ http.interceptors.response.use(
       const sentAuth = error.config?.headers?.get?.('Authorization')
       const currentToken = sessionStore.getToken()
       if (typeof sentAuth === 'string' && currentToken && sentAuth === `Bearer ${currentToken}`) {
-        if (apiError.code === 'SESSION_EXPIRED') sessionStore.end('expired')
-        else if (apiError.code === 'UNAUTHENTICATED') sessionStore.end('invalid')
+        const reason = apiError.code === 'SESSION_EXPIRED' ? 'expired' : apiError.code === 'UNAUTHENTICATED' ? 'invalid' : null
+        // Deferred to the next task so this rejection reaches its caller first. Ending the
+        // session synchronously re-keys the session observers; TanStack Query then cancels the
+        // in-flight query with `revert: true` and `fetchQuery` resolves with the stale user,
+        // which made route guards let an expired session through.
+        if (reason) window.setTimeout(() => {
+          if (sessionStore.getToken() === currentToken) sessionStore.end(reason)
+        }, 0)
       }
     }
     return Promise.reject(apiError)

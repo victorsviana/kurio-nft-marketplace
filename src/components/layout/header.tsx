@@ -126,17 +126,17 @@ function AccountAction() {
         <DropdownMenuLabel className="truncate text-fg-muted">{auth.user.email}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/account/profile">
+          <Link to="/account/profile" preload={false}>
             <UserRound aria-hidden="true" /> Meu perfil
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/account/wallets">
+          <Link to="/account/wallets" preload={false}>
             <Wallet aria-hidden="true" /> Carteiras
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/favorites">
+          <Link to="/favorites" preload={false}>
             <Heart aria-hidden="true" /> Favoritos
           </Link>
         </DropdownMenuItem>

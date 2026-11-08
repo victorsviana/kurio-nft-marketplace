@@ -20,7 +20,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootLayout() {
-  const { mobileTabBar } = useLayoutOptions()
+  const { mobileTabBar, mobileFooter } = useLayoutOptions()
   return (
     <AnnouncerProvider>
       <RealtimeProvider>
@@ -36,7 +36,9 @@ function RootLayout() {
           <main id="conteudo" tabIndex={-1} className="flex-1 outline-none">
             <Outlet />
           </main>
-          <Footer />
+          <div className={cn(!mobileFooter && 'max-md:hidden')}>
+            <Footer />
+          </div>
           {mobileTabBar && <MobileTabBar />}
         </div>
         <Toaster position="top-center" />

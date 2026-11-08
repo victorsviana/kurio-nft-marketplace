@@ -10,7 +10,9 @@ test.describe('Checkpoint 1 — fundação', () => {
 
   test('GEN-02: acesso direto a rota profunda', async ({ page }) => {
     await page.goto('/nft/emerald-ape-042')
-    await expect(page.getByRole('heading', { level: 1, name: 'Detalhes do NFT' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Emerald Ape #042' })).toBeVisible()
+    await page.reload()
+    await expect(page.getByRole('heading', { level: 1, name: 'Emerald Ape #042' })).toBeVisible()
   })
 
   test('GEN-01: rota inexistente mostra 404 com link para o início', async ({ page }) => {

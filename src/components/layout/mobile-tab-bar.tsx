@@ -29,7 +29,7 @@ export function MobileTabBar() {
   const units = cartUnits(cart)
 
   return (
-    <nav aria-label="Navegação inferior" className="fixed inset-x-0 bottom-0 z-40 h-[126px] md:hidden">
+    <nav aria-label="Navegação inferior" className="fixed inset-x-0 bottom-0 z-40 h-[126px] overflow-x-clip md:hidden">
       <div className="pointer-events-none absolute inset-x-0 top-[31px] bottom-0" aria-hidden="true">
         <img src={tabbarBg} alt="" className="absolute -top-10 -right-[30px] -bottom-5 -left-[30px] h-[155px] w-[calc(100%+60px)] max-w-none" />
       </div>
@@ -49,6 +49,7 @@ export function MobileTabBar() {
             <li key={item.to}>
               <Link
                 to={item.to}
+                preload={item.to === '/favorites' || item.to === '/account/profile' ? false : undefined}
                 aria-label={item.to === '/cart' && units > 0 ? `${item.label}, ${units} ${units === 1 ? 'item' : 'itens'}` : item.label}
                 aria-current={active ? 'page' : undefined}
                 className={cn(

@@ -33,10 +33,10 @@ Base (sequencial):
 - [x] T2.6 UI base: shadcn com o visual Kurio, Header, Footer, tab bar mobile, layout por `staticData`, skeleton com shimmer, região `aria-live`, guards de rota — GEN-04, GEN-05, A11Y-04
 
 Telas (∥ depois da base):
-- [ ] T2.7 ∥ Início: hero, destaque, abas, sidebar de filtros/drawer mobile, ordenação, grade, paginação, estados — CAT-01..CAT-09, GEN-05, GEN-06
-- [ ] T2.8 ∥ Detalhe: galeria, edições, quantidade, abas, relacionados, 404 — NFT-01..NFT-06
-- [ ] T2.9 ∥ Conta: login e cadastro (modal no desktop, tela no mobile), sessão, guard, `?redirect=`, logout — AUTH-01..AUTH-06
-- [ ] T2.10 E2E: CAT, NFT, AUTH (cenários 1, 2, 3 do §9)
+- [x] T2.7 ∥ Início: hero, destaque, abas, sidebar de filtros/drawer mobile, ordenação, grade, paginação, estados — CAT-01..CAT-09, GEN-05, GEN-06
+- [x] T2.8 ∥ Detalhe: galeria, edições, quantidade, abas, relacionados, 404 — NFT-01..NFT-06
+- [x] T2.9 ∥ Conta: login e cadastro (modal no desktop, tela no mobile), sessão, guard, `?redirect=`, logout — AUTH-01..AUTH-06
+- [x] T2.10 E2E: CAT, NFT, AUTH (cenários 1, 2, 3 do §9) + MOCK — `catalog`, `nft-detail`, `auth`, `mocks`, `smoke` (113 testes em desktop e mobile)
 
 ## Checkpoint 3 — Compra e tempo real
 
