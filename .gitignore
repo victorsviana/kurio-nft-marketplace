@@ -34,4 +34,3 @@ design/figma-canvas-1x.png
 /lighthouse/.lighthouseci/
 .env*.local
 .vercel
-.env*
