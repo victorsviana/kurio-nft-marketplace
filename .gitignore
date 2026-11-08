@@ -34,3 +34,6 @@ design/figma-canvas-1x.png
 /lighthouse/.lighthouseci/
 .env*.local
 .vercel
+
+# per-agent scratch (screenshots, temp scripts, test output)
+/.scratch*/
