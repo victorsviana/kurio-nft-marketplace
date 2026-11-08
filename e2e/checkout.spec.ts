@@ -234,6 +234,22 @@ test.describe('Checkout', () => {
     expect(orders[0]!.total).toBe('2.516')
   })
 
+  test('RT-09/CHK-05: edição esgotada durante a revisão bloqueia a confirmação e oferece voltar ao carrinho', async ({ page }) => {
+    await setup(page, 'ana')
+    await waitForSocket(page)
+    await openReview(page)
+
+    await page.evaluate(() => window.__kurioMocks!.nft.sellOut('emerald-ape-042', 'emerald-ape-042.limited-50'))
+
+    const stale = reviewDialog(page).getByTestId('stale-quote')
+    await expect(stale).toContainText('Emerald Ape #042 · 1/50: edição esgotada')
+    await expect(confirmPayment(page)).toBeDisabled()
+    await expect(stale.getByRole('button', { name: 'Aceitar novos valores' })).toHaveCount(0)
+    await reviewDialog(page).getByRole('link', { name: 'Voltar ao carrinho' }).click()
+    await expect(page).toHaveURL(/\/cart$/)
+    expect(await page.evaluate(() => window.__kurioMocks!.orders.list().length)).toBe(0)
+  })
+
   test('CHK-05: with the socket down, the server 409 backstop shows the same stale UI (no auto-retry)', async ({ page }) => {
     await setup(page, 'ana')
     await waitForSocket(page)

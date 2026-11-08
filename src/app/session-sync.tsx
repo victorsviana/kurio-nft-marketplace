@@ -2,6 +2,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
+import { clearDraft } from '@/features/checkout/lib/buyer-form'
+import { clearOrderAttempt } from '@/features/checkout/lib/order-attempt'
 import { useAnnounce } from '@/shared/a11y/announcer'
 import { clearPrivateCache } from '@/shared/session/auth'
 import { sessionStore } from '@/shared/session/session-store'
@@ -21,7 +23,13 @@ export function SessionSync() {
 
   useEffect(
     () =>
-      sessionStore.onEnd((reason) => {
+      sessionStore.onEnd((reason, previous) => {
+        // Logout / user switch: drop the previous user's checkout draft and order attempt (it
+        // carries their data). On expiry they are kept so the checkout can resume (AUTH-04).
+        if (reason !== 'expired') {
+          clearDraft(previous.userId)
+          clearOrderAttempt(previous.userId)
+        }
         // Deferred by a task: the 401 that ended the session may belong to a request a route
         // guard is still awaiting; removing its query synchronously would turn that 401 into a
         // cancellation and the guard would lose `reason=expired`.

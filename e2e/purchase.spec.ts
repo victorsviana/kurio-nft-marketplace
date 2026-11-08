@@ -86,6 +86,10 @@ test('CHK-06: cliques repetidos em "Confirmar pagamento" criam um único pedido'
   await addToCart(page, 'emerald-ape-042', 'limited-50', 2)
   await page.goto('/checkout')
   const confirm = await openReview(page)
+  const posts: string[] = []
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/orders') posts.push(request.url())
+  })
   // Three clicks dispatched in the same task, before React can disable the button.
   await confirm.evaluate((button: HTMLButtonElement) => {
     button.click()
@@ -95,6 +99,8 @@ test('CHK-06: cliques repetidos em "Confirmar pagamento" criam um único pedido'
   await expect(page).toHaveURL(/\/orders\/order-/, { timeout: 15_000 })
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Aguardando confirmação/)
   expect(await ordersCount(page)).toBe(1)
+  // The client guard sent a single request (the server rules are a second line of defense).
+  expect(posts).toHaveLength(1)
 })
 
 test('CHK-06 ORD-06: timeout após criar o pedido — o cliente repete com a mesma chave e recupera o mesmo pedido', async ({ page }) => {

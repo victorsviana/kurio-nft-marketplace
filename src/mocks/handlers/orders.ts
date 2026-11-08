@@ -57,7 +57,15 @@ export const orderHandlers = [
     const { quoteId, walletId, network, buyer } = body.data
     const quote = findQuote(quoteId)
     const cart = findCart(db(), { kind: 'user', userId })
-    if (!quote || !cart || quote.cartId !== cart.id) return apiError(404, 'NOT_FOUND', 'Cotação não encontrada.')
+    if (!cart || (quote && quote.cartId !== cart.id)) return apiError(404, 'NOT_FOUND', 'Cotação não encontrada.')
+    if (!quote) {
+      // The reviewed quote was pruned (only the newest few per cart are kept): treat it as stale
+      // and hand back a fresh quote, so the client asks for a new confirmation instead of failing.
+      const fresh = createQuote(cart, network, userId)
+      return apiError(409, 'QUOTE_STALE', 'A cotação revisada expirou. Confira os valores e confirme novamente.', {
+        details: { quote: toQuoteDto(fresh) },
+      })
+    }
 
     const wallets = db().wallets[userId]
     const wallet = [wallets?.primary, wallets?.secondary].find((w) => w?.id === walletId)

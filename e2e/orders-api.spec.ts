@@ -212,3 +212,17 @@ test('CART-04: carrinho do visitante é preservado (merge) ao autenticar', async
   const again = await api(page, 'POST', '/cart/merge', { body: { guestCartId } })
   expect(again.body.items[0].quantity).toBe(2)
 })
+
+test('CHK-05: cotação revisada descartada (muitas recotações) vira 409 QUOTE_STALE com cotação nova, não 404', async ({ page }) => {
+  await signedIn(page)
+  const { input } = await readyToOrder(page)
+  for (let i = 0; i < 11; i++) await api(page, 'POST', '/quote', { body: { network: 'ethereum' } })
+  const stale = await api(page, 'POST', '/orders', { body: input, headers: { 'Idempotency-Key': 'k-pruned' } })
+  expect(stale.status).toBe(409)
+  expect(stale.body.error.code).toBe('QUOTE_STALE')
+  const ok = await api(page, 'POST', '/orders', {
+    body: { ...input, quoteId: stale.body.error.details.quote.id },
+    headers: { 'Idempotency-Key': 'k-pruned-2' },
+  })
+  expect(ok.status).toBe(201)
+})
