@@ -65,7 +65,7 @@ export function NftDetailView({
     tab,
     setTab,
     favorite: favorites.isFavorite(nft.id),
-    toggleFavorite: () => favorites.toggle(nft.id),
+    toggleFavorite: () => favorites.toggle(nft.id, nft.name),
     openReviews: () => {
       setTab('reviews')
       document.getElementById('nft-tabs')?.scrollIntoView({ block: 'start' })

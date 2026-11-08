@@ -20,7 +20,7 @@ const artClass = 'aspect-square w-full rounded-2xl md:rounded-[15px]'
 
 export interface FavoriteControl {
   isFavorite: (nftId: string) => boolean
-  toggle: (nftId: string) => void
+  toggle: (nftId: string, name?: string) => void
 }
 
 export function NftCard({ nft, column, favorite }: { nft: NftSummary; column: 0 | 1; favorite: FavoriteControl }) {
@@ -42,7 +42,7 @@ export function NftCard({ nft, column, favorite }: { nft: NftSummary; column: 0 
           />
           <button
             type="button"
-            onClick={() => favorite.toggle(nft.id)}
+            onClick={() => favorite.toggle(nft.id, nft.name)}
             aria-pressed={isFavorite}
             aria-label={`Favoritar ${nft.name}`}
             className="absolute top-1.5 right-1.5 z-10 grid size-7 place-items-center rounded-full after:absolute after:-inset-2 md:hidden"

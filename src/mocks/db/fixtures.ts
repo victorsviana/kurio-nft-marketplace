@@ -18,7 +18,7 @@ import type { CouponRecord, DbState, NftRecord, UserRecord, WalletPair } from '.
  * reuses them (asset substitution documented in ARCHITECTURE.md).
  */
 
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 /** Fixed "catalog clock": `isNew` and `createdAt` are relative to it, never to Date.now(). */
 export const CATALOG_NOW = Date.parse('2026-11-01T12:00:00.000Z')
 export const NEW_WINDOW_MS = 4 * 24 * 60 * 60 * 1000
@@ -355,6 +355,8 @@ const COUPONS: CouponRecord[] = [
   { code: 'BLACKFRIDAY', percentOff: '15', expiresAt: '2025-11-30T23:59:59.000Z' },
 ]
 
+export const DEFAULT_NETWORK_FEES = { ethereum: '0.016', polygon: '0.002', solana: '0.0005' } as const
+
 export const DEMO_USERS = {
   ana: { id: 'user-ana', email: 'ana@kurio.dev', password: DEMO_PASSWORD },
   bruno: { id: 'user-bruno', email: 'bruno@kurio.dev', password: DEMO_PASSWORD },
@@ -423,6 +425,8 @@ export async function createSeed(): Promise<DbState> {
     orders: [],
     idempotency: [],
     wallets,
+    walletConnections: [],
+    networkFees: { ...DEFAULT_NETWORK_FEES },
   }
 }
 

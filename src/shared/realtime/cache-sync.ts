@@ -63,6 +63,8 @@ export function registerCacheSync(client: RealtimeClient, queryClient: QueryClie
     })
     // Receipt fields (confirmedAt, explorerUrl) come from REST.
     void queryClient.invalidateQueries({ queryKey: queryKeys.me.orders(userId) })
+    // A confirmed order removed the purchased lines on the server (ORD-04).
+    if (event.data.status === 'confirmed') void queryClient.invalidateQueries({ queryKey: queryKeys.cart.all })
   })
 
   const offReconnect = client.onReconnect(() => {

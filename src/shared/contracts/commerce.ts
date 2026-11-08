@@ -1,10 +1,12 @@
 import { z } from 'zod'
+import { displayNameField, emailField, usernameField } from './auth'
 import { idSchema, isoDateSchema, moneySchema, quantitySchema } from './common'
-import { networkSchema } from './nft'
+import { networkSchema, nftSummarySchema } from './nft'
 
 /* ---------------------------------- Favorites ---------------------------------- */
 
-export const favoritesResponseSchema = z.object({ nftIds: z.array(idSchema) })
+/** `items` carries the summaries so the favorites page renders without N detail requests. */
+export const favoritesResponseSchema = z.object({ nftIds: z.array(idSchema), items: z.array(nftSummarySchema) })
 export type FavoritesResponse = z.infer<typeof favoritesResponseSchema>
 
 /* ------------------------------------ Cart ------------------------------------- */
@@ -48,9 +50,15 @@ export const mergeCartInputSchema = z.object({ guestCartId: z.uuid() })
 
 /* ------------------------------------ Quote ------------------------------------ */
 
+/**
+ * Difference between a quote and the one the client reviewed (`previousQuoteId`) or between
+ * the cart and the stock. `itemId` is null for quote-wide changes (coupon, network fee).
+ */
 export const quoteIssueSchema = z.object({
-  type: z.enum(['PRICE_CHANGED', 'AVAILABILITY_CHANGED', 'SOLD_OUT']),
-  itemId: idSchema,
+  type: z.enum(['PRICE_CHANGED', 'AVAILABILITY_CHANGED', 'SOLD_OUT', 'ITEM_REMOVED', 'COUPON_CHANGED', 'FEE_CHANGED']),
+  itemId: idSchema.nullable(),
+  /** Human label of the affected line or field ("Emerald Ape #042 · 1/50", "Cupom KURIO10"). */
+  label: z.string(),
   previous: z.string(),
   current: z.string(),
 })
@@ -61,9 +69,13 @@ export const quoteLineSchema = z.object({
   nftId: idSchema,
   editionId: idSchema,
   name: z.string(),
+  image: z.string(),
+  tokenId: z.string(),
   editionLabel: z.string(),
   unitPrice: moneySchema,
   quantity: quantitySchema,
+  /** Units available when the quote was computed; `quantity > available` blocks the order. */
+  available: z.number().int().nonnegative(),
   lineTotal: moneySchema,
 })
 export type QuoteLine = z.infer<typeof quoteLineSchema>
@@ -79,11 +91,18 @@ export const quoteSchema = z.object({
   coupon: z.object({ code: z.string(), status: z.enum(['applied', 'invalid', 'expired']) }).nullable(),
   network: networkSchema,
   issues: z.array(quoteIssueSchema),
+  /** False when a line exceeds the stock or is sold out: the order would be refused. */
+  purchasable: z.boolean(),
   createdAt: isoDateSchema,
 })
 export type Quote = z.infer<typeof quoteSchema>
 
-export const quoteInputSchema = z.object({ network: networkSchema.optional() })
+export const quoteInputSchema = z.object({
+  network: networkSchema.optional(),
+  /** Quote the user reviewed; the response lists what changed since it (CHK-05). */
+  previousQuoteId: idSchema.optional(),
+})
+export type QuoteInput = z.infer<typeof quoteInputSchema>
 
 /* ----------------------------------- Wallets ----------------------------------- */
 
@@ -129,7 +148,7 @@ export const walletInputSchema = z.object({
 })
 export type WalletInput = z.input<typeof walletInputSchema>
 
-export const walletConnectInputSchema = z.object({ network: networkSchema })
+export const walletConnectInputSchema = z.object({ network: networkSchema, kind: walletKindSchema })
 export const walletConnectResponseSchema = z.object({ status: z.literal('connected') })
 
 /* ------------------------------------ Orders ----------------------------------- */
@@ -137,14 +156,44 @@ export const walletConnectResponseSchema = z.object({ status: z.literal('connect
 export const orderStatusSchema = z.enum(['pending', 'confirmed', 'declined'])
 export type OrderStatus = z.infer<typeof orderStatusSchema>
 
+/**
+ * Collector data of the payment form (Figma "Perfil do colecionador"). The same schema
+ * validates the form and the POST /orders body (CHK-02); the server maps failures back to
+ * these field names in `fieldErrors`.
+ */
 export const buyerSchema = z.object({
-  fullName: z
-    .string({ error: 'Informe seu nome completo' })
+  displayName: displayNameField,
+  username: usernameField,
+  /** "Nome do perfil": the ENS label, combined with `ensSuffix` (".eth"). */
+  profileName: z
+    .string({ error: 'Informe o nome do perfil' })
     .trim()
-    .min(3, { error: 'Informe seu nome completo' })
-    .max(80, { error: 'Use no máximo 80 caracteres' }),
-  email: z.string().trim().pipe(z.email({ error: 'Informe um e-mail válido' })),
+    .min(3, { error: 'O nome do perfil precisa ter pelo menos 3 caracteres' })
+    .max(32, { error: 'Use no máximo 32 caracteres' })
+    .regex(/^[a-z0-9-]+$/, { error: 'Use letras minúsculas, números ou hífen' }),
+  ensSuffix: z.literal('.eth', { error: 'Selecione o sufixo ENS' }),
+  email: emailField,
+  walletAddress: walletAddressField,
+  walletKind: walletKindSchema,
+  /** "ENS ou carteira secundária (opcional)". */
+  secondaryReference: z
+    .string()
+    .trim()
+    .max(64, { error: 'Use no máximo 64 caracteres' })
+    .refine((v) => v === '' || /^0x[a-fA-F0-9]{40}$/.test(v) || /^[a-z0-9-]+\.eth$/.test(v), {
+      error: 'Use um endereço 0x ou um nome ENS (nome.eth)',
+    })
+    .default(''),
+  referralCode: z
+    .string()
+    .trim()
+    .max(16, { error: 'Use no máximo 16 caracteres' })
+    .refine((v) => v === '' || /^[A-Za-z0-9]{4,16}$/.test(v), { error: 'Use de 4 a 16 letras ou números' })
+    .default(''),
+  note: z.string().trim().max(280, { error: 'Use no máximo 280 caracteres' }).default(''),
 })
+export type Buyer = z.output<typeof buyerSchema>
+export type BuyerInput = z.input<typeof buyerSchema>
 
 export const createOrderInputSchema = z.object({
   quoteId: idSchema,
@@ -152,7 +201,7 @@ export const createOrderInputSchema = z.object({
   network: networkSchema,
   buyer: buyerSchema,
 })
-export type CreateOrderInput = z.infer<typeof createOrderInputSchema>
+export type CreateOrderInput = z.input<typeof createOrderInputSchema>
 
 export const orderSchema = z.object({
   id: idSchema,
@@ -164,7 +213,7 @@ export const orderSchema = z.object({
   declineReason: z.string().nullable(),
   wallet: z.object({ id: idSchema, address: z.string(), kind: walletKindSchema, label: z.string() }),
   network: networkSchema,
-  buyer: buyerSchema,
+  buyer: z.object({ displayName: z.string(), email: z.string(), username: z.string() }),
   /** Immutable snapshot of the purchased lines (ORD-05). */
   items: z.array(quoteLineSchema),
   subtotal: moneySchema,
@@ -176,4 +225,4 @@ export const orderSchema = z.object({
 })
 export type Order = z.infer<typeof orderSchema>
 
-export const activeOrderResponseSchema = orderSchema.nullable()
+export const activeOrderResponseSchema = z.object({ order: orderSchema.nullable() })

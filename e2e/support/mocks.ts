@@ -83,6 +83,16 @@ declare global {
         setAvailability: (nftId: string, editionId: string, available: number) => unknown
         sellOut: (nftId: string, editionId?: string) => unknown
       }
+      orders: {
+        list: () => { id: string; status: string; userId: string; total: string; version: number }[]
+        hold: (value?: boolean) => void
+        settle: (orderId?: string, outcome?: 'confirmed' | 'declined') => unknown
+      }
+      wallets: {
+        disconnectAll: () => void
+        connections: () => unknown[]
+      }
+      setNetworkFee: (network: 'ethereum' | 'polygon' | 'solana', fee: string) => void
       realtime: {
         connectionCount: () => number
         dropAllConnections: (options?: { refuse?: boolean }) => void

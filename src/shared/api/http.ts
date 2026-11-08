@@ -20,7 +20,8 @@ export const http = axios.create({
 
 http.interceptors.request.use((request) => {
   const token = sessionStore.getToken()
-  if (token) request.headers.set('Authorization', `Bearer ${token}`)
+  // An explicit header wins: the guest-cart merge runs with the new token before the session starts.
+  if (token && !request.headers.has('Authorization')) request.headers.set('Authorization', `Bearer ${token}`)
   request.headers.set('X-Guest-Cart-Id', getGuestCartId())
   return request
 })

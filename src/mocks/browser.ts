@@ -2,9 +2,12 @@ import { setupWorker } from 'msw/browser'
 import { mockControl } from './control'
 import { resolveTokenUser } from './domain/auth'
 import { initDb } from './db/store'
+import { resumePendingOrders } from './domain/orders'
+import { accountHandlers } from './handlers/account'
 import { authHandlers } from './handlers/auth'
 import { cartHandlers } from './handlers/cart'
 import { nftHandlers } from './handlers/nfts'
+import { orderHandlers } from './handlers/orders'
 import { realtimeHandlers } from './handlers/realtime'
 import { notFoundHandler, scenarioHandler } from './handlers/scenario'
 import { systemHandlers } from './handlers/system'
@@ -17,6 +20,8 @@ export const worker = setupWorker(
   ...authHandlers,
   ...nftHandlers,
   ...cartHandlers,
+  ...orderHandlers,
+  ...accountHandlers,
   notFoundHandler,
   ...realtimeHandlers,
 )
@@ -35,6 +40,7 @@ function syncSocketAvailability() {
 export async function startMockServer() {
   loadScenario()
   await initDb()
+  resumePendingOrders()
   // Private Socket.IO events are routed by the user that owns the handshake token (RT-07).
   setTokenResolver(resolveTokenUser)
   syncSocketAvailability()

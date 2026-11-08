@@ -23,6 +23,8 @@ export const queryKeys = {
   cart: {
     all: ['cart'] as const,
     byOwner: (ownerKey: string) => ['cart', ownerKey] as const,
+    /** Under the cart key: every cart invalidation (mutation, event, reconnect) re-prices it. */
+    quote: (ownerKey: string, network: string) => ['cart', ownerKey, 'quote', network] as const,
   },
 
   me: {
@@ -34,7 +36,6 @@ export const queryKeys = {
     orders: (userId: string) => ['me', userId, 'orders'] as const,
     order: (userId: string, orderId: string) => ['me', userId, 'orders', orderId] as const,
     activeOrder: (userId: string) => ['me', userId, 'orders', 'active'] as const,
-    quote: (userId: string) => ['me', userId, 'quote'] as const,
   },
 }
 

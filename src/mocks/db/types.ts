@@ -109,7 +109,17 @@ export interface QuoteRecord {
   total: string
   coupon: { code: string; status: 'applied' | 'invalid' | 'expired' } | null
   issues: QuoteIssue[]
+  purchasable: boolean
   createdAt: string
+}
+
+/** A wallet connected for a network in the simulation (POST /wallets/:id/connect). */
+export interface WalletConnectionRecord {
+  userId: string
+  walletId: string
+  network: Network
+  kind: Wallet['kind']
+  connectedAt: string
 }
 
 export interface IdempotencyRecord {
@@ -148,4 +158,7 @@ export interface DbState {
   idempotency: IdempotencyRecord[]
   /** userId → wallets */
   wallets: Record<string, WalletPair>
+  walletConnections: WalletConnectionRecord[]
+  /** Network fee per network, decimal ETH string (control API can change it: FEE_CHANGED). */
+  networkFees: Record<Network, string>
 }

@@ -1,5 +1,7 @@
 import Big from 'big.js'
+import type { Network } from '@/shared/contracts'
 import { expireAllSessions } from './domain/auth'
+import { resetOrderTimers, setHold, settleOrder } from './domain/orders'
 import { db, mutate, resetDb } from './db/store'
 import type { NftRecord } from './db/types'
 import { emitStaleNftEvent, publishNftUpdated, replayLastEvent } from './realtime/events'
@@ -53,6 +55,8 @@ export const mockControl = {
     clearFailures()
     setScenario('default')
     restoreConnections()
+    resetOrderTimers()
+    setHold(false)
     await resetDb()
   },
 
@@ -75,6 +79,32 @@ export const mockControl = {
         editionOf(nft, editionId).available = 0
       }),
   },
+
+  orders: {
+    list: () => db().orders.map(({ id, status, userId, total, version }) => ({ id, status, userId, total, version })),
+    /** true: new and pending orders stay pending until `settle` (survives reload). */
+    hold: (value = true) => setHold(value),
+    /** Settles a pending order now (the latest pending one when omitted), optionally forcing the outcome. */
+    settle: (orderId?: string, outcome?: 'confirmed' | 'declined') => {
+      const id = orderId ?? db().orders.findLast((o) => o.status === 'pending')?.id
+      return id ? settleOrder(id, outcome) : null
+    },
+  },
+
+  wallets: {
+    /** Drops every wallet connection: the next POST /orders answers 422 WALLET_DISCONNECTED. */
+    disconnectAll: () =>
+      mutate((draft) => {
+        draft.walletConnections = []
+      }),
+    connections: () => db().walletConnections,
+  },
+
+  /** Changes the network fee (FEE_CHANGED in the next quote comparison). */
+  setNetworkFee: (network: Network, fee: string) =>
+    mutate((draft) => {
+      draft.networkFees[network] = new Big(fee).toString()
+    }),
 
   realtime: {
     connectionCount,

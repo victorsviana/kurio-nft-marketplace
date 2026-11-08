@@ -3,6 +3,9 @@ import { toApiError } from '@/shared/api/errors'
 import { apiRequest, apiRequestVoid } from '@/shared/api/request'
 import { queryKeys } from '@/shared/api/query-keys'
 import { authResponseSchema, type AuthResponse, type LoginInput, type RegisterInput, type User } from '@/shared/contracts'
+import { mergeGuestCart } from '@/shared/api/endpoints/cart'
+import { cartOwnerKey } from '@/shared/api/query-keys'
+import { getGuestCartId, rotateGuestCartId } from './guest-cart'
 import { sessionStore, useStoredSession } from './session-store'
 
 /**
@@ -62,7 +65,21 @@ export async function ensureUser(queryClient: QueryClient): Promise<EnsureUserRe
   }
 }
 
-function startSession(queryClient: QueryClient, response: AuthResponse) {
+/**
+ * Starts the session after login/register. The visitor's cart is merged first, with the new
+ * token (CART-04): when the session flips to the user, the cart query already reads the merged
+ * cart. A merge failure never blocks the login; the visitor cart stays and can merge next time.
+ */
+async function startSession(queryClient: QueryClient, response: AuthResponse) {
+  const guestCartId = getGuestCartId()
+  try {
+    const merged = await mergeGuestCart(response.session.token, guestCartId)
+    queryClient.setQueryData(queryKeys.cart.byOwner(cartOwnerKey(response.user.id, guestCartId)), merged)
+    queryClient.removeQueries({ queryKey: queryKeys.cart.byOwner(cartOwnerKey(null, guestCartId)) })
+    rotateGuestCartId()
+  } catch {
+    /* keep the visitor cart; the user cart loads normally */
+  }
   queryClient.setQueryData(queryKeys.session(response.session.token), response)
   sessionStore.start({
     token: response.session.token,
