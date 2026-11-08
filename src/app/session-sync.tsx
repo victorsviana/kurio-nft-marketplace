@@ -23,8 +23,9 @@ export function SessionSync() {
     () =>
       sessionStore.onEnd((reason) => {
         clearPrivateCache(queryClient)
-        const { location, matches } = router.state
-        const onPrivateRoute = matches.some((match) => match.staticData.requiresAuth)
+        const { location, matches, status } = router.state
+        // While a navigation is pending, the route guard owns the redirect (it knows the target URL).
+        const onPrivateRoute = status === 'idle' && matches.some((match) => match.staticData.requiresAuth)
 
         if (reason === 'expired') {
           const message = 'Sua sessão expirou. Entre novamente para continuar.'

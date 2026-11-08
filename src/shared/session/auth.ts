@@ -1,4 +1,5 @@
 import { queryOptions, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { toApiError } from '@/shared/api/errors'
 import { apiRequest, apiRequestVoid } from '@/shared/api/request'
 import { queryKeys } from '@/shared/api/query-keys'
 import { authResponseSchema, type AuthResponse, type LoginInput, type RegisterInput, type User } from '@/shared/contracts'
@@ -33,15 +34,21 @@ export function useAuth(): AuthState {
   return { status: 'loading', user: null }
 }
 
-/** Router guard helper: resolves the current user or null, without throwing. */
-export async function ensureUser(queryClient: QueryClient): Promise<User | null> {
+export type EnsureUserResult = { user: User; expired: false } | { user: null; expired: boolean }
+
+/**
+ * Router guard helper. Revalidates the session with the server on private navigations (at most
+ * every 10s), so an expired session is detected while navigating, not only on the next write
+ * (AUTH-04). Never throws.
+ */
+export async function ensureUser(queryClient: QueryClient): Promise<EnsureUserResult> {
   const stored = sessionStore.get()
-  if (!stored) return null
+  if (!stored) return { user: null, expired: false }
   try {
-    const { user } = await queryClient.ensureQueryData(sessionQuery(stored.token))
-    return user
-  } catch {
-    return null
+    const { user } = await queryClient.fetchQuery({ ...sessionQuery(stored.token), staleTime: 10_000 })
+    return { user, expired: false }
+  } catch (error) {
+    return { user: null, expired: toApiError(error).code === 'SESSION_EXPIRED' }
   }
 }
 
